@@ -4,13 +4,13 @@ import com.example.memos.data.api.MemosApi
 import com.example.memos.data.api.dto.CreateMemoRequestDto
 import com.example.memos.data.api.dto.MemoDto
 import com.example.memos.data.api.dto.UpdateMemoRequestDto
-import com.example.memos.data.api.dto.toDomain as attachmentToDomain
 import com.example.memos.data.api.dto.toEntity
 import com.example.memos.data.db.dao.MemoDao
 import com.example.memos.data.db.entity.MemoEntity
 import com.example.memos.data.db.entity.SyncStatus
 import com.example.memos.data.db.entity.toDomain
 import com.example.memos.data.db.entity.toEntity
+import com.example.memos.data.model.Attachment
 import com.example.memos.data.model.Memo
 import com.example.memos.data.model.Visibility
 import kotlinx.coroutines.flow.Flow
@@ -45,7 +45,14 @@ class MemoRepositoryImpl @Inject constructor(
         if (dto.attachments.isNullOrEmpty()) {
             val attachResp = api.listMemoAttachments(name)
             if (attachResp.isSuccessful) {
-                val attachList = attachResp.body()?.attachments?.map { attachmentToDomain(it) } ?: emptyList()
+                val attachList = attachResp.body()?.attachments?.map {
+                    Attachment(
+                        name = it.name ?: "",
+                        filename = it.filename ?: "",
+                        type = it.type,
+                        size = it.size
+                    )
+                } ?: emptyList()
                 if (attachList.isNotEmpty()) {
                     val updated = entity.copy(
                         attachmentsJson = com.google.gson.Gson().toJson(attachList)
