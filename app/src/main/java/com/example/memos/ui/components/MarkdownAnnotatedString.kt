@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -23,10 +22,11 @@ fun String.toMarkdownAnnotatedString(): AnnotatedString {
 
 private fun AnnotatedString.Builder.parseLine(line: String) {
     // Heading: # to ######
-    val headingMatch = Regex("^(#{1,6})\\s+(.*)$").find(line)
+    val headingMatch = Regex("^(#{1,6})(\\s+)(.*)$").find(line)
     if (headingMatch != null) {
+        val prefix = headingMatch.groupValues[1] + headingMatch.groupValues[2]
+        val content = headingMatch.groupValues[3]
         val level = headingMatch.groupValues[1].length
-        val content = headingMatch.groupValues[2]
         val size = when (level) {
             1 -> 28.sp
             2 -> 24.sp
@@ -35,6 +35,7 @@ private fun AnnotatedString.Builder.parseLine(line: String) {
             5 -> 16.sp
             else -> 14.sp
         }
+        append(prefix)
         withStyle(
             SpanStyle(
                 fontSize = size,
@@ -47,15 +48,18 @@ private fun AnnotatedString.Builder.parseLine(line: String) {
     }
 
     // Quote: > text
-    val quoteMatch = Regex("^>\\s+(.*)$").find(line)
+    val quoteMatch = Regex("^(>)(\\s+)(.*)$").find(line)
     if (quoteMatch != null) {
+        val prefix = quoteMatch.groupValues[1] + quoteMatch.groupValues[2]
+        val content = quoteMatch.groupValues[3]
+        append(prefix)
         withStyle(
             SpanStyle(
                 color = Color(0xFF666666),
                 fontStyle = FontStyle.Italic
             )
         ) {
-            appendInline(quoteMatch.groupValues[1])
+            append(content)
         }
         return
     }
@@ -66,24 +70,24 @@ private fun AnnotatedString.Builder.parseLine(line: String) {
 private fun AnnotatedString.Builder.appendInline(text: String) {
     var cursor = 0
     val patterns = listOf(
-        Triple(Regex("\\*\\*(.+?)\\*\\*"), SpanStyle(fontWeight = FontWeight.Bold), 2),
-        Triple(Regex("_(.+?)_"), SpanStyle(fontStyle = FontStyle.Italic), 1),
-        Triple(Regex("~~(.+?)~~"), SpanStyle(textDecoration = TextDecoration.LineThrough), 2),
-        Triple(Regex("`(.+?)`"), SpanStyle(fontFamily = FontFamily.Monospace, color = Color(0xFFCC3300)), 1),
-        Triple(Regex("\\[(.+?)]\\((.+?)\\)"), SpanStyle(color = Color(0xFF0066CC), textDecoration = TextDecoration.Underline), 0)
+        Triple(Regex("\\*\\*(.+?)\\*\\*"), SpanStyle(fontWeight = FontWeight.Bold), "**"),
+        Triple(Regex("_(.+?)_"), SpanStyle(fontStyle = FontStyle.Italic), "_"),
+        Triple(Regex("~~(.+?)~~"), SpanStyle(textDecoration = TextDecoration.LineThrough), "~~"),
+        Triple(Regex("`(.+?)`"), SpanStyle(fontFamily = FontFamily.Monospace, color = Color(0xFFCC3300)), "`"),
+        Triple(Regex("\\[(.+?)]\\((.+?)\\)"), SpanStyle(color = Color(0xFF0066CC), textDecoration = TextDecoration.Underline), "[]")
     )
 
     while (cursor < text.length) {
         var nearestMatch: MatchResult? = null
         var nearestStyle: SpanStyle? = null
-        var nearestOffset = 0
+        var nearestMarker: String = ""
 
-        for ((regex, style, offset) in patterns) {
+        for ((regex, style, marker) in patterns) {
             val match = regex.find(text, cursor) ?: continue
             if (nearestMatch == null || match.range.first < nearestMatch.range.first) {
                 nearestMatch = match
                 nearestStyle = style
-                nearestOffset = offset
+                nearestMarker = marker
             }
         }
 
@@ -96,11 +100,17 @@ private fun AnnotatedString.Builder.appendInline(text: String) {
             append(text.substring(cursor, nearestMatch.range.first))
         }
 
-        val contentIndex = if (nearestMatch.groupValues.size > 1) 1 else 0
-        withStyle(nearestStyle!!) {
-            append(nearestMatch.groupValues[contentIndex])
-        }
+        val fullMatch = nearestMatch.value
+        val content = nearestMatch.groupValues[1]
+        val prefix = fullMatch.substring(0, fullMatch.indexOf(content))
+        val suffix = fullMatch.substring(fullMatch.indexOf(content) + content.length)
 
-        cursor = nearestMatch.range.last + 1 + nearestOffset
+        append(prefix)
+        withStyle(nearestStyle!!) {
+            append(content)
+        }
+        append(suffix)
+
+        cursor = nearestMatch.range.last + 1
     }
 }
