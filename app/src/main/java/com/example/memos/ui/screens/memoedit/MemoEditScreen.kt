@@ -33,11 +33,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.memos.data.model.Visibility
 import com.example.memos.ui.components.MarkdownPreview
+import com.example.memos.ui.components.MarkdownToolbar
 import com.example.memos.ui.components.TagInputField
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -49,9 +51,16 @@ fun MemoEditScreen(
 ) {
     val uiState = viewModel.uiState
     var showPreview by remember { mutableStateOf(false) }
+    var textFieldValue by remember { mutableStateOf(TextFieldValue(uiState.content)) }
 
     LaunchedEffect(uiState.saved) {
         if (uiState.saved) onNavigateBack()
+    }
+
+    LaunchedEffect(uiState.content) {
+        if (textFieldValue.text != uiState.content) {
+            textFieldValue = TextFieldValue(uiState.content)
+        }
     }
 
     Scaffold(
@@ -142,9 +151,18 @@ fun MemoEditScreen(
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
+                MarkdownToolbar(
+                    textFieldValue = textFieldValue,
+                    onValueChange = { textFieldValue = it },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(4.dp))
                 OutlinedTextField(
-                    value = uiState.content,
-                    onValueChange = viewModel::setContent,
+                    value = textFieldValue,
+                    onValueChange = {
+                        textFieldValue = it
+                        viewModel.setContent(it.text)
+                    },
                     modifier = Modifier.fillMaxSize(),
                     placeholder = { Text("Write in Markdown...") }
                 )
