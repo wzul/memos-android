@@ -31,10 +31,12 @@ fun LoginScreen(
     viewModel: LoginViewModel,
     onLoginSuccess: () -> Unit
 ) {
-    var instanceUrl by remember { mutableStateOf("") }
+    var useCustomUrl by remember { mutableStateOf(false) }
+    var customUrl by remember { mutableStateOf("") }
     var accessToken by remember { mutableStateOf("") }
     var enableBiometric by remember { mutableStateOf(false) }
     val uiState = viewModel.uiState
+    val defaultUrl = "https://memos.wanzul-hosting.com"
 
     LaunchedEffect(uiState.isLoggedIn) {
         if (uiState.isLoggedIn) onLoginSuccess()
@@ -61,14 +63,38 @@ fun LoginScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            OutlinedTextField(
-                value = instanceUrl,
-                onValueChange = { instanceUrl = it },
-                label = { Text("Instance URL") },
-                placeholder = { Text("https://memos.example.com") },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Use Custom Server")
+                Switch(
+                    checked = useCustomUrl,
+                    onCheckedChange = { useCustomUrl = it }
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (useCustomUrl) {
+                OutlinedTextField(
+                    value = customUrl,
+                    onValueChange = { customUrl = it },
+                    label = { Text("Instance URL") },
+                    placeholder = { Text("https://memos.example.com") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            } else {
+                OutlinedTextField(
+                    value = defaultUrl,
+                    onValueChange = { },
+                    label = { Text("Instance URL") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    enabled = false
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
@@ -99,14 +125,15 @@ fun LoginScreen(
 
             Button(
                 onClick = {
+                    val url = if (useCustomUrl) customUrl.trim() else defaultUrl
                     viewModel.login(
-                        instanceUrl.trim(),
+                        url,
                         accessToken.trim(),
                         enableBiometric
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading && instanceUrl.isNotBlank() && accessToken.isNotBlank()
+                enabled = !uiState.isLoading && accessToken.isNotBlank() && (!useCustomUrl || customUrl.isNotBlank())
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
