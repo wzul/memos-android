@@ -46,9 +46,9 @@ class MemoRepositoryImpl @Inject constructor(
         dao.insertOrUpdate(localMemo)
 
         // Try sync immediately if online
-        syncSingle(localMemo)
+        val resultEntity = syncSingle(localMemo)
 
-        dao.getMemoByName(localMemo.name)?.toDomain()
+        (resultEntity ?: dao.getMemoByName(localMemo.name))?.toDomain()
             ?: throw IllegalStateException("Failed to create memo")
     }
 
@@ -72,9 +72,9 @@ class MemoRepositoryImpl @Inject constructor(
             lastModified = System.currentTimeMillis()
         )
         dao.insertOrUpdate(updated)
-        syncSingle(updated)
+        val resultEntity = syncSingle(updated)
 
-        dao.getMemoByName(name)?.toDomain()
+        (resultEntity ?: dao.getMemoByName(name))?.toDomain()
             ?: throw IllegalStateException("Failed to update memo")
     }
 
@@ -115,8 +115,8 @@ class MemoRepositoryImpl @Inject constructor(
         dao.clearAll()
     }
 
-    private suspend fun syncSingle(entity: MemoEntity) {
-        when (SyncStatus.valueOf(entity.syncStatus)) {
+    private suspend fun syncSingle(entity: MemoEntity): MemoEntity? {
+        return when (SyncStatus.valueOf(entity.syncStatus)) {
             SyncStatus.PENDING_CREATE -> {
                 val request = CreateMemoRequestDto(
                     content = entity.content,
@@ -129,15 +129,16 @@ class MemoRepositoryImpl @Inject constructor(
                     val remote = resp.body()
                     if (remote?.name != null) {
                         dao.deleteByName(entity.name)
-                        dao.insertOrUpdate(
-                            entity.copy(
-                                name = remote.name,
-                                localId = null,
-                                syncStatus = SyncStatus.SYNCED.name
-                            )
+                        val synced = entity.copy(
+                            name = remote.name,
+                            localId = null,
+                            syncStatus = SyncStatus.SYNCED.name
                         )
+                        dao.insertOrUpdate(synced)
+                        return synced
                     }
                 }
+                entity
             }
             SyncStatus.PENDING_UPDATE -> {
                 val updateMask = buildList {
@@ -152,16 +153,21 @@ class MemoRepositoryImpl @Inject constructor(
                 )
                 val resp = api.updateMemo(entity.name, updateMask, request)
                 if (resp.isSuccessful) {
-                    dao.insertOrUpdate(entity.copy(syncStatus = SyncStatus.SYNCED.name))
+                    val synced = entity.copy(syncStatus = SyncStatus.SYNCED.name)
+                    dao.insertOrUpdate(synced)
+                    return synced
                 }
+                entity
             }
             SyncStatus.PENDING_DELETE -> {
                 val resp = api.deleteMemo(entity.name)
                 if (resp.isSuccessful || resp.code() == 404) {
                     dao.deleteByName(entity.name)
+                    return null
                 }
+                entity
             }
-            SyncStatus.SYNCED -> { /* nothing */ }
+            SyncStatus.SYNCED -> entity
         }
     }
 }
