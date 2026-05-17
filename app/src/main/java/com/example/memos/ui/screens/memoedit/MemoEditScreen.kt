@@ -184,7 +184,7 @@ fun MemoEditScreen(
                 title = { Text("Error") },
                 text = { Text(uiState.error!!) },
                 confirmButton = {
-                    TextButton(onClick = viewModel.dismissError) {
+                    TextButton(onClick = { viewModel.dismissError() }) {
                         Text("OK")
                     }
                 }
