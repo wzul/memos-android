@@ -18,6 +18,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +43,8 @@ import com.example.memos.ui.components.MarkdownPreview
 import com.example.memos.ui.components.MarkdownToolbar
 import com.example.memos.ui.components.TagInputField
 
+private enum class PreviewMode { EDIT_ONLY, SPLIT, FULL }
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun MemoEditScreen(
@@ -50,7 +53,7 @@ fun MemoEditScreen(
     onNavigateBack: () -> Unit
 ) {
     val uiState = viewModel.uiState
-    var showPreview by remember { mutableStateOf(false) }
+    var previewMode by remember { mutableStateOf(PreviewMode.SPLIT) }
     var textFieldValue by remember { mutableStateOf(TextFieldValue(uiState.content)) }
 
     LaunchedEffect(uiState.saved) {
@@ -79,10 +82,20 @@ fun MemoEditScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showPreview = !showPreview }) {
+                    IconButton(onClick = {
+                        previewMode = when (previewMode) {
+                            PreviewMode.EDIT_ONLY -> PreviewMode.SPLIT
+                            PreviewMode.SPLIT -> PreviewMode.FULL
+                            PreviewMode.FULL -> PreviewMode.EDIT_ONLY
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Visibility,
-                            contentDescription = if (showPreview) "Edit" else "Preview"
+                            contentDescription = when (previewMode) {
+                                PreviewMode.EDIT_ONLY -> "Show split preview"
+                                PreviewMode.SPLIT -> "Show full preview"
+                                PreviewMode.FULL -> "Hide preview"
+                            }
                         )
                     }
                     IconButton(
@@ -145,27 +158,56 @@ fun MemoEditScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (showPreview) {
-                MarkdownPreview(
-                    content = uiState.content,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                MarkdownToolbar(
-                    textFieldValue = textFieldValue,
-                    onValueChange = { textFieldValue = it },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = textFieldValue,
-                    onValueChange = {
-                        textFieldValue = it
-                        viewModel.setContent(it.text)
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                    placeholder = { Text("Write in Markdown...") }
-                )
+            when (previewMode) {
+                PreviewMode.FULL -> {
+                    MarkdownPreview(
+                        content = uiState.content,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                PreviewMode.EDIT_ONLY -> {
+                    MarkdownToolbar(
+                        textFieldValue = textFieldValue,
+                        onValueChange = { textFieldValue = it },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    OutlinedTextField(
+                        value = textFieldValue,
+                        onValueChange = {
+                            textFieldValue = it
+                            viewModel.setContent(it.text)
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                        placeholder = { Text("Write in Markdown...") }
+                    )
+                }
+                PreviewMode.SPLIT -> {
+                    MarkdownToolbar(
+                        textFieldValue = textFieldValue,
+                        onValueChange = { textFieldValue = it },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    OutlinedTextField(
+                        value = textFieldValue,
+                        onValueChange = {
+                            textFieldValue = it
+                            viewModel.setContent(it.text)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1.2f),
+                        placeholder = { Text("Write in Markdown...") }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    MarkdownPreview(
+                        content = uiState.content,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    )
+                }
             }
         }
 

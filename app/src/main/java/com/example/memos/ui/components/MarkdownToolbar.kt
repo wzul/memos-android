@@ -2,6 +2,7 @@ package com.example.memos.ui.components
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -16,11 +17,18 @@ import androidx.compose.material.icons.filled.FormatStrikethrough
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Title
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextRange
@@ -55,9 +63,7 @@ fun MarkdownToolbar(
             ToolbarButton(Icons.Default.FormatStrikethrough, "Strikethrough") {
                 wrapSelection(textFieldValue, onValueChange, "~~", "~~")
             }
-            ToolbarButton(Icons.Default.Title, "Heading") {
-                prefixLine(textFieldValue, onValueChange, "# ")
-            }
+            HeadingDropdown(textFieldValue, onValueChange)
             ToolbarButton(Icons.Default.FormatListBulleted, "Bullet list") {
                 prefixLine(textFieldValue, onValueChange, "- ")
             }
@@ -70,7 +76,7 @@ fun MarkdownToolbar(
             ToolbarButton(Icons.Default.Terminal, "Code block") {
                 insertCodeBlock(textFieldValue, onValueChange)
             }
-            ToolbarButton(Icons.Filled.FormatQuote, "Quote") {
+            ToolbarButton(Icons.Default.FormatQuote, "Quote") {
                 prefixLine(textFieldValue, onValueChange, "> ")
             }
             ToolbarButton(Icons.Default.Link, "Link") {
@@ -137,6 +143,28 @@ private fun insertCodeBlock(
     val newText = text.substring(0, cursor) + insert + text.substring(cursor)
     val newCursor = cursor + 5
     onChange(TextFieldValue(newText, TextRange(newCursor)))
+}
+
+@Composable
+private fun HeadingDropdown(
+    textFieldValue: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        ToolbarButton(Icons.Default.Title, "Heading") { expanded = true }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            (1..6).forEach { level ->
+                DropdownMenuItem(
+                    text = { Text("Heading $level") },
+                    onClick = {
+                        expanded = false
+                        prefixLine(textFieldValue, onValueChange, "${"#".repeat(level)} ")
+                    }
+                )
+            }
+        }
+    }
 }
 
 private fun insertLink(
