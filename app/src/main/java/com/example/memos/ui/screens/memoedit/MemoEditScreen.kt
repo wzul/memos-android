@@ -14,12 +14,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.PushPin
-import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,11 +38,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.memos.data.model.Visibility
-import com.example.memos.ui.components.MarkdownPreview
 import com.example.memos.ui.components.MarkdownToolbar
 import com.example.memos.ui.components.TagInputField
-
-private enum class PreviewMode { EDIT_ONLY, SPLIT, FULL }
+import com.example.memos.ui.components.toMarkdownAnnotatedString
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -54,8 +50,16 @@ fun MemoEditScreen(
     onNavigateBack: () -> Unit
 ) {
     val uiState = viewModel.uiState
-    var previewMode by remember { mutableStateOf(PreviewMode.SPLIT) }
     var textFieldValue by remember { mutableStateOf(TextFieldValue(uiState.content)) }
+
+    // Derived display value with inline markdown styling
+    val displayValue = remember(textFieldValue) {
+        TextFieldValue(
+            annotatedString = textFieldValue.text.toMarkdownAnnotatedString(),
+            selection = textFieldValue.selection,
+            composition = textFieldValue.composition
+        )
+    }
 
     LaunchedEffect(uiState.saved) {
         if (uiState.saved) onNavigateBack()
@@ -83,22 +87,6 @@ fun MemoEditScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        previewMode = when (previewMode) {
-                            PreviewMode.EDIT_ONLY -> PreviewMode.SPLIT
-                            PreviewMode.SPLIT -> PreviewMode.FULL
-                            PreviewMode.FULL -> PreviewMode.EDIT_ONLY
-                        }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Visibility,
-                            contentDescription = when (previewMode) {
-                                PreviewMode.EDIT_ONLY -> "Show split preview"
-                                PreviewMode.SPLIT -> "Show full preview"
-                                PreviewMode.FULL -> "Hide preview"
-                            }
-                        )
-                    }
                     IconButton(
                         onClick = { viewModel.save() },
                         enabled = !uiState.isSaving && uiState.content.isNotBlank()
@@ -172,50 +160,22 @@ fun MemoEditScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            when (previewMode) {
-                PreviewMode.FULL -> {
-                    MarkdownPreview(
-                        content = uiState.content,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
+            OutlinedTextField(
+                value = displayValue,
+                onValueChange = {
+                    // Keep raw text state; annotated display recomputes on next frame
+                    textFieldValue = TextFieldValue(
+                        text = it.text,
+                        selection = it.selection,
+                        composition = it.composition
                     )
-                }
-                PreviewMode.EDIT_ONLY -> {
-                    OutlinedTextField(
-                        value = textFieldValue,
-                        onValueChange = {
-                            textFieldValue = it
-                            viewModel.setContent(it.text)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        placeholder = { Text("Write in Markdown...") }
-                    )
-                }
-                PreviewMode.SPLIT -> {
-                    OutlinedTextField(
-                        value = textFieldValue,
-                        onValueChange = {
-                            textFieldValue = it
-                            viewModel.setContent(it.text)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1.2f),
-                        placeholder = { Text("Write in Markdown...") }
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                    MarkdownPreview(
-                        content = uiState.content,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    )
-                }
-            }
-
+                    viewModel.setContent(it.text)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                placeholder = { Text("Write in Markdown...") }
+            )
         }
 
         if (uiState.error != null) {
@@ -224,7 +184,7 @@ fun MemoEditScreen(
                 title = { Text("Error") },
                 text = { Text(uiState.error!!) },
                 confirmButton = {
-                    TextButton(onClick = viewModel::dismissError) {
+                    TextButton(onClick = viewModel.dismissError) {
                         Text("OK")
                     }
                 }
