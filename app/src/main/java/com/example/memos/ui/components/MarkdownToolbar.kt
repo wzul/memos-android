@@ -6,8 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.FormatQuote
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.material.icons.filled.FormatBold
 import androidx.compose.material.icons.filled.FormatItalic
 import androidx.compose.material.icons.filled.FormatListBulleted
@@ -23,8 +23,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.input.TextRange
 import androidx.compose.ui.unit.dp
 import kotlin.math.max
 import kotlin.math.min
@@ -70,7 +70,7 @@ fun MarkdownToolbar(
             ToolbarButton(Icons.Default.Terminal, "Code block") {
                 insertCodeBlock(textFieldValue, onValueChange)
             }
-            ToolbarButton(Icons.AutoMirrored.Filled.FormatQuote, "Quote") {
+            ToolbarButton(Icons.Filled.FormatQuote, "Quote") {
                 prefixLine(textFieldValue, onValueChange, "> ")
             }
             ToolbarButton(Icons.Default.Link, "Link") {
