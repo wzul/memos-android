@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -120,6 +121,7 @@ fun MemoEditScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(16.dp)
+                .imePadding()
         ) {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -162,33 +164,25 @@ fun MemoEditScreen(
                 PreviewMode.FULL -> {
                     MarkdownPreview(
                         content = uiState.content,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
                     )
                 }
                 PreviewMode.EDIT_ONLY -> {
-                    MarkdownToolbar(
-                        textFieldValue = textFieldValue,
-                        onValueChange = { textFieldValue = it },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
                     OutlinedTextField(
                         value = textFieldValue,
                         onValueChange = {
                             textFieldValue = it
                             viewModel.setContent(it.text)
                         },
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
                         placeholder = { Text("Write in Markdown...") }
                     )
                 }
                 PreviewMode.SPLIT -> {
-                    MarkdownToolbar(
-                        textFieldValue = textFieldValue,
-                        onValueChange = { textFieldValue = it },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
                     OutlinedTextField(
                         value = textFieldValue,
                         onValueChange = {
@@ -209,6 +203,17 @@ fun MemoEditScreen(
                     )
                 }
             }
+
+            MarkdownToolbar(
+                textFieldValue = textFieldValue,
+                onValueChange = {
+                    textFieldValue = it
+                    viewModel.setContent(it.text)
+                },
+                onUndo = { viewModel.undo() },
+                onRedo = { viewModel.redo() },
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 
         if (uiState.error != null) {

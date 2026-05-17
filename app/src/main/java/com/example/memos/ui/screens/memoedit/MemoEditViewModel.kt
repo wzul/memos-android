@@ -24,6 +24,10 @@ class MemoEditViewModel @Inject constructor(
     var uiState by mutableStateOf(MemoEditUiState())
         private set
 
+    private val history = mutableListOf<String>()
+    private var historyIndex = -1
+    private var lastSavedContent = ""
+
     init {
         if (memoName != null && memoName != "new") {
             loadMemo(memoName)
@@ -41,6 +45,7 @@ class MemoEditViewModel @Inject constructor(
                     tags = memo.tags,
                     isLoading = false
                 )
+                pushHistory(memo.content)
             }
         }
     }
@@ -50,7 +55,10 @@ class MemoEditViewModel @Inject constructor(
     }
 
     fun setContent(content: String) {
-        uiState = uiState.copy(content = content)
+        if (content != uiState.content) {
+            pushHistory(content)
+            uiState = uiState.copy(content = content)
+        }
     }
 
     fun setVisibility(visibility: Visibility) {
@@ -59,6 +67,42 @@ class MemoEditViewModel @Inject constructor(
 
     fun togglePinned() {
         uiState = uiState.copy(pinned = !uiState.pinned)
+    }
+
+    fun undo() {
+        if (historyIndex > 0) {
+            historyIndex--
+            val previous = history[historyIndex]
+            uiState = uiState.copy(content = previous)
+        }
+    }
+
+    fun redo() {
+        if (historyIndex < history.size - 1) {
+            historyIndex++
+            val next = history[historyIndex]
+            uiState = uiState.copy(content = next)
+        }
+    }
+
+    val canUndo: Boolean
+        get() = historyIndex > 0
+
+    val canRedo: Boolean
+        get() = historyIndex < history.size - 1
+
+    private fun pushHistory(content: String) {
+        if (historyIndex < history.size - 1) {
+            history.subList(historyIndex + 1, history.size).clear()
+        }
+        if (history.isEmpty() || history.last() != content) {
+            history.add(content)
+            historyIndex = history.size - 1
+            if (history.size > 50) {
+                history.removeAt(0)
+                historyIndex--
+            }
+        }
     }
 
     fun save() {

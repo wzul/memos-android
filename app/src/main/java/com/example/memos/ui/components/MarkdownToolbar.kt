@@ -4,9 +4,13 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.FormatQuote
 import androidx.compose.material.icons.filled.FormatBold
@@ -15,6 +19,7 @@ import androidx.compose.material.icons.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.FormatStrikethrough
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material3.DropdownMenu
@@ -29,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextRange
@@ -41,59 +47,92 @@ import kotlin.math.min
 fun MarkdownToolbar(
     textFieldValue: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
+    onUndo: () -> Unit,
+    onRedo: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
 
-    Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        tonalElevation = 2.dp
+    Row(
+        modifier = modifier
+            .horizontalScroll(scrollState)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.horizontalScroll(scrollState),
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            ToolbarButton(Icons.Default.FormatBold, "Bold") {
-                wrapSelection(textFieldValue, onValueChange, "**", "**")
-            }
-            ToolbarButton(Icons.Default.FormatItalic, "Italic") {
-                wrapSelection(textFieldValue, onValueChange, "_", "_")
-            }
-            ToolbarButton(Icons.Default.FormatStrikethrough, "Strikethrough") {
-                wrapSelection(textFieldValue, onValueChange, "~~", "~~")
-            }
-            HeadingDropdown(textFieldValue, onValueChange)
-            ToolbarButton(Icons.Default.FormatListBulleted, "Bullet list") {
-                prefixLine(textFieldValue, onValueChange, "- ")
-            }
-            ToolbarButton(Icons.Default.FormatListNumbered, "Numbered list") {
-                prefixLine(textFieldValue, onValueChange, "1. ")
-            }
-            ToolbarButton(Icons.Default.Code, "Inline code") {
-                wrapSelection(textFieldValue, onValueChange, "`", "`")
-            }
-            ToolbarButton(Icons.Default.Terminal, "Code block") {
-                insertCodeBlock(textFieldValue, onValueChange)
-            }
-            ToolbarButton(Icons.Default.FormatQuote, "Quote") {
-                prefixLine(textFieldValue, onValueChange, "> ")
-            }
-            ToolbarButton(Icons.Default.Link, "Link") {
-                insertLink(textFieldValue, onValueChange)
-            }
+        FloatingButton(Icons.Default.FormatBold, "Bold") {
+            wrapSelection(textFieldValue, onValueChange, "**", "**")
+        }
+        FloatingButton(Icons.Default.FormatItalic, "Italic") {
+            wrapSelection(textFieldValue, onValueChange, "_", "_")
+        }
+        FloatingButton(Icons.Default.FormatStrikethrough, "Strikethrough") {
+            wrapSelection(textFieldValue, onValueChange, "~~", "~~")
+        }
+        HeadingDropdown(textFieldValue, onValueChange)
+        FloatingButton(Icons.Default.FormatListBulleted, "Bullet list") {
+            prefixLine(textFieldValue, onValueChange, "- ")
+        }
+        FloatingButton(Icons.Default.FormatListNumbered, "Numbered list") {
+            prefixLine(textFieldValue, onValueChange, "1. ")
+        }
+        FloatingButton(Icons.Default.Code, "Inline code") {
+            wrapSelection(textFieldValue, onValueChange, "`", "`")
+        }
+        FloatingButton(Icons.Default.Terminal, "Code block") {
+            insertCodeBlock(textFieldValue, onValueChange)
+        }
+        FloatingButton(Icons.Default.FormatQuote, "Quote") {
+            prefixLine(textFieldValue, onValueChange, "> ")
+        }
+        FloatingButton(Icons.Default.Link, "Link") {
+            insertLink(textFieldValue, onValueChange)
+        }
+        FloatingButton(Icons.AutoMirrored.Filled.Undo, "Undo", onClick = onUndo)
+        FloatingButton(Icons.AutoMirrored.Filled.Redo, "Redo", onClick = onRedo)
+    }
+}
+
+@Composable
+private fun FloatingButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        modifier = Modifier.size(40.dp)
+    ) {
+        IconButton(onClick = onClick) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
 
 @Composable
-private fun ToolbarButton(
-    icon: ImageVector,
-    contentDescription: String,
-    onClick: () -> Unit
+private fun HeadingDropdown(
+    textFieldValue: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit
 ) {
-    IconButton(onClick = onClick, modifier = Modifier.size(40.dp)) {
-        Icon(icon, contentDescription = contentDescription)
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        FloatingButton(Icons.Default.Title, "Heading") { expanded = true }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            (1..6).forEach { level ->
+                DropdownMenuItem(
+                    text = { Text("Heading $level") },
+                    onClick = {
+                        expanded = false
+                        prefixLine(textFieldValue, onValueChange, "${"#".repeat(level)} ")
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -143,28 +182,6 @@ private fun insertCodeBlock(
     val newText = text.substring(0, cursor) + insert + text.substring(cursor)
     val newCursor = cursor + 5
     onChange(TextFieldValue(newText, TextRange(newCursor)))
-}
-
-@Composable
-private fun HeadingDropdown(
-    textFieldValue: TextFieldValue,
-    onValueChange: (TextFieldValue) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    Box {
-        ToolbarButton(Icons.Default.Title, "Heading") { expanded = true }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            (1..6).forEach { level ->
-                DropdownMenuItem(
-                    text = { Text("Heading $level") },
-                    onClick = {
-                        expanded = false
-                        prefixLine(textFieldValue, onValueChange, "${"#".repeat(level)} ")
-                    }
-                )
-            }
-        }
-    }
 }
 
 private fun insertLink(
