@@ -32,6 +32,21 @@ data class ListMemosResponseDto(
     val nextPageToken: String? = null
 )
 
+fun MemoDto.toEntity(): com.example.memos.data.db.entity.MemoEntity {
+    return com.example.memos.data.db.entity.MemoEntity(
+        name = name ?: "",
+        content = content,
+        state = state ?: "NORMAL",
+        creator = creator,
+        createTime = createTime?.let { java.time.Instant.parse(it).toEpochMilli() },
+        updateTime = updateTime?.let { java.time.Instant.parse(it).toEpochMilli() },
+        visibility = visibility ?: "PRIVATE",
+        tags = tags?.joinToString(",") ?: "",
+        pinned = pinned ?: false,
+        snippet = snippet
+    )
+}
+
 data class SignInRequestDto(
     val username: String,
     val password: String

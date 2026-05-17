@@ -4,6 +4,7 @@ import com.example.memos.data.api.MemosApi
 import com.example.memos.data.api.dto.CreateMemoRequestDto
 import com.example.memos.data.api.dto.MemoDto
 import com.example.memos.data.api.dto.UpdateMemoRequestDto
+import com.example.memos.data.api.dto.toEntity
 import com.example.memos.data.db.dao.MemoDao
 import com.example.memos.data.db.entity.MemoEntity
 import com.example.memos.data.db.entity.SyncStatus
