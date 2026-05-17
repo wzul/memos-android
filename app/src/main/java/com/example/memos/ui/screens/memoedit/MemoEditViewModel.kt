@@ -43,7 +43,7 @@ class MemoEditViewModel @Inject constructor(
                     content = memo.content,
                     visibility = memo.visibility,
                     pinned = memo.pinned,
-                    tags = memo.tags,
+                    tags = extractHashtags(memo.content),
                     attachments = memo.attachments,
                     isLoading = false
                 )
@@ -56,7 +56,7 @@ class MemoEditViewModel @Inject constructor(
                         content = refreshed.content,
                         visibility = refreshed.visibility,
                         pinned = refreshed.pinned,
-                        tags = refreshed.tags,
+                        tags = extractHashtags(refreshed.content),
                         attachments = refreshed.attachments
                     )
                 }
@@ -66,15 +66,17 @@ class MemoEditViewModel @Inject constructor(
         }
     }
 
-    fun setTags(tags: List<String>) {
-        uiState = uiState.copy(tags = tags)
-    }
-
     fun setContent(content: String) {
         if (content != uiState.content) {
             pushHistory(content)
-            uiState = uiState.copy(content = content)
+            val tags = extractHashtags(content)
+            uiState = uiState.copy(content = content, tags = tags)
         }
+    }
+
+    private fun extractHashtags(text: String): List<String> {
+        val regex = Regex("#([A-Za-z0-9_\\-]+)")
+        return regex.findAll(text).map { it.groupValues[1] }.distinct().toList()
     }
 
     fun setVisibility(visibility: Visibility) {

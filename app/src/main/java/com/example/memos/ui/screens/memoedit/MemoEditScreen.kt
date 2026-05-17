@@ -48,7 +48,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.memos.data.model.Visibility
 import com.example.memos.ui.components.MarkdownToolbar
-import com.example.memos.ui.components.TagInputField
 import com.example.memos.ui.components.toMarkdownAnnotatedString
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -156,15 +155,23 @@ fun MemoEditScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    TagInputField(
-                        tags = uiState.tags,
-                        onTagsChanged = viewModel::setTags,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
+                    if (uiState.tags.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            uiState.tags.forEach { tag ->
+                                FilterChip(
+                                    selected = true,
+                                    onClick = {},
+                                    label = { Text("#$tag") },
+                                    enabled = false
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
             }
 
