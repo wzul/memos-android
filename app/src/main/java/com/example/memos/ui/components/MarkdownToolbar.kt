@@ -4,31 +4,17 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Redo
-import androidx.compose.material.icons.automirrored.filled.Undo
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.FormatQuote
-import androidx.compose.material.icons.filled.FormatBold
-import androidx.compose.material.icons.filled.FormatItalic
-import androidx.compose.material.icons.filled.FormatListBulleted
-import androidx.compose.material.icons.filled.FormatListNumbered
-import androidx.compose.material.icons.filled.FormatStrikethrough
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Terminal
-import androidx.compose.material.icons.filled.Title
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,10 +22,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlin.math.max
 import kotlin.math.min
 
@@ -56,82 +45,182 @@ fun MarkdownToolbar(
     Row(
         modifier = modifier
             .horizontalScroll(scrollState)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            .padding(horizontal = 8.dp)
+            .height(48.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        FloatingButton(Icons.Default.FormatBold, "Bold") {
+        // Headings
+        TextActionButton("H1") {
+            prefixLine(textFieldValue, onValueChange, "# ")
+        }
+        TextActionButton("H2") {
+            prefixLine(textFieldValue, onValueChange, "## ")
+        }
+
+        ThinDivider()
+
+        // Style dropdown (Aa)
+        StyleDropdown(textFieldValue, onValueChange)
+
+        ThinDivider()
+
+        // Basic formatting
+        TextActionButton("B", fontWeight = FontWeight.Bold) {
             wrapSelection(textFieldValue, onValueChange, "**", "**")
         }
-        FloatingButton(Icons.Default.FormatItalic, "Italic") {
+        TextActionButton("I", fontStyle = FontStyle.Italic) {
             wrapSelection(textFieldValue, onValueChange, "_", "_")
         }
-        FloatingButton(Icons.Default.FormatStrikethrough, "Strikethrough") {
+        TextActionButton("U", textDecoration = TextDecoration.Underline) {
+            wrapSelection(textFieldValue, onValueChange, "<u>", "</u>")
+        }
+        TextActionButton("S", textDecoration = TextDecoration.LineThrough) {
             wrapSelection(textFieldValue, onValueChange, "~~", "~~")
         }
-        HeadingDropdown(textFieldValue, onValueChange)
-        FloatingButton(Icons.Default.FormatListBulleted, "Bullet list") {
+
+        ThinDivider()
+
+        // Lists
+        TextActionButton("•") {
             prefixLine(textFieldValue, onValueChange, "- ")
         }
-        FloatingButton(Icons.Default.FormatListNumbered, "Numbered list") {
+        TextActionButton("1.") {
             prefixLine(textFieldValue, onValueChange, "1. ")
         }
-        FloatingButton(Icons.Default.Code, "Inline code") {
+
+        ThinDivider()
+
+        // Code & quote
+        TextActionButton("` ") {
             wrapSelection(textFieldValue, onValueChange, "`", "`")
         }
-        FloatingButton(Icons.Default.Terminal, "Code block") {
-            insertCodeBlock(textFieldValue, onValueChange)
-        }
-        FloatingButton(Icons.Default.FormatQuote, "Quote") {
+        TextActionButton("\"") {
             prefixLine(textFieldValue, onValueChange, "> ")
         }
-        FloatingButton(Icons.Default.Link, "Link") {
-            insertLink(textFieldValue, onValueChange)
-        }
-        FloatingButton(Icons.AutoMirrored.Filled.Undo, "Undo", onClick = onUndo)
-        FloatingButton(Icons.AutoMirrored.Filled.Redo, "Redo", onClick = onRedo)
+
+        ThinDivider()
+
+        // Undo / Redo
+        TextActionButton("↶", enabled = false, onClick = onUndo)
+        TextActionButton("↷", enabled = false, onClick = onRedo)
     }
 }
 
 @Composable
-private fun FloatingButton(
-    icon: ImageVector,
-    contentDescription: String,
+private fun ThinDivider() {
+    VerticalDivider(
+        modifier = Modifier
+            .height(24.dp)
+            .padding(horizontal = 4.dp),
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+    )
+}
+
+@Composable
+private fun TextActionButton(
+    label: String,
+    fontWeight: FontWeight? = null,
+    fontStyle: FontStyle? = null,
+    textDecoration: TextDecoration? = null,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        modifier = Modifier.size(40.dp)
+    TextButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier
+            .padding(horizontal = 2.dp)
+            .height(40.dp)
     ) {
-        IconButton(onClick = onClick) {
-            Icon(
-                imageVector = icon,
-                contentDescription = contentDescription,
-                modifier = Modifier.size(20.dp)
-            )
-        }
+        Text(
+            text = label,
+            fontSize = 16.sp,
+            fontWeight = fontWeight,
+            fontStyle = fontStyle,
+            textDecoration = textDecoration,
+            color = if (enabled) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+            }
+        )
     }
 }
 
 @Composable
-private fun HeadingDropdown(
+private fun StyleDropdown(
     textFieldValue: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box {
-        FloatingButton(Icons.Default.Title, "Heading") { expanded = true }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            (1..6).forEach { level ->
-                DropdownMenuItem(
-                    text = { Text("Heading $level") },
-                    onClick = {
-                        expanded = false
-                        prefixLine(textFieldValue, onValueChange, "${"#".repeat(level)} ")
-                    }
-                )
-            }
+        TextButton(
+            onClick = { expanded = true },
+            modifier = Modifier
+                .padding(horizontal = 2.dp)
+                .height(40.dp)
+        ) {
+            Text(
+                text = "Aa",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("Heading 1") },
+                onClick = {
+                    expanded = false
+                    prefixLine(textFieldValue, onValueChange, "# ")
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Heading 2") },
+                onClick = {
+                    expanded = false
+                    prefixLine(textFieldValue, onValueChange, "## ")
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Heading 3") },
+                onClick = {
+                    expanded = false
+                    prefixLine(textFieldValue, onValueChange, "### ")
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Heading 4") },
+                onClick = {
+                    expanded = false
+                    prefixLine(textFieldValue, onValueChange, "#### ")
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Heading 5") },
+                onClick = {
+                    expanded = false
+                    prefixLine(textFieldValue, onValueChange, "##### ")
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Heading 6") },
+                onClick = {
+                    expanded = false
+                    prefixLine(textFieldValue, onValueChange, "###### ")
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Normal") },
+                onClick = {
+                    expanded = false
+                    // Remove heading prefix from current line
+                    removeHeadingPrefix(textFieldValue, onValueChange)
+                }
+            )
         }
     }
 }
@@ -169,6 +258,24 @@ private fun prefixLine(
     val lineStart = if (cursor > 0) text.lastIndexOf('\n', cursor - 1) + 1 else 0
     val newText = text.substring(0, lineStart) + prefix + text.substring(lineStart)
     val newCursor = cursor + prefix.length
+    onChange(TextFieldValue(newText, TextRange(newCursor)))
+}
+
+private fun removeHeadingPrefix(
+    current: TextFieldValue,
+    onChange: (TextFieldValue) -> Unit
+) {
+    val text = current.text
+    val cursor = current.selection.start
+    val lineStart = if (cursor > 0) text.lastIndexOf('\n', cursor - 1) + 1 else 0
+    val lineEnd = text.indexOf('\n', cursor).takeIf { it >= 0 } ?: text.length
+    val line = text.substring(lineStart, lineEnd)
+
+    val headingRegex = "^#{1,6}\\s+(.*)$".toRegex()
+    val newLine = headingRegex.replace(line, "$1")
+
+    val newText = text.substring(0, lineStart) + newLine + text.substring(lineEnd)
+    val newCursor = lineStart + newLine.length
     onChange(TextFieldValue(newText, TextRange(newCursor)))
 }
 
