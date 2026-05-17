@@ -49,15 +49,19 @@ class MemoEditViewModel @Inject constructor(
                 )
                 pushHistory(memo.content)
             }
-            // Refresh from server to get latest attachments
-            memoRepository.refreshMemo(name).onSuccess { refreshed ->
-                uiState = uiState.copy(
-                    content = refreshed.content,
-                    visibility = refreshed.visibility,
-                    pinned = refreshed.pinned,
-                    tags = refreshed.tags,
-                    attachments = refreshed.attachments
-                )
+            // Refresh from server to get latest attachments — silently ignore network errors
+            try {
+                memoRepository.refreshMemo(name).onSuccess { refreshed ->
+                    uiState = uiState.copy(
+                        content = refreshed.content,
+                        visibility = refreshed.visibility,
+                        pinned = refreshed.pinned,
+                        tags = refreshed.tags,
+                        attachments = refreshed.attachments
+                    )
+                }
+            } catch (_: Exception) {
+                // offline — local data is sufficient
             }
         }
     }

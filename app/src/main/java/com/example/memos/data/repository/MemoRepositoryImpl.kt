@@ -78,8 +78,12 @@ class MemoRepositoryImpl @Inject constructor(
         )
         dao.insertOrUpdate(localMemo)
 
-        // Try sync immediately if online
-        val resultEntity = syncSingle(localMemo)
+        // Try sync immediately if online — fail silently; background sync will retry
+        val resultEntity = try {
+            syncSingle(localMemo)
+        } catch (_: Exception) {
+            null
+        }
 
         (resultEntity ?: dao.getMemoByName(localMemo.name))?.toDomain()
             ?: throw IllegalStateException("Failed to create memo")
@@ -105,7 +109,11 @@ class MemoRepositoryImpl @Inject constructor(
             lastModified = System.currentTimeMillis()
         )
         dao.insertOrUpdate(updated)
-        val resultEntity = syncSingle(updated)
+        val resultEntity = try {
+            syncSingle(updated)
+        } catch (_: Exception) {
+            null
+        }
 
         (resultEntity ?: dao.getMemoByName(name))?.toDomain()
             ?: throw IllegalStateException("Failed to update memo")
@@ -121,7 +129,11 @@ class MemoRepositoryImpl @Inject constructor(
                 SyncStatus.PENDING_DELETE.name
         )
         dao.insertOrUpdate(updated)
-        syncSingle(updated)
+        try {
+            syncSingle(updated)
+        } catch (_: Exception) {
+            // fail silently; background sync will retry
+        }
     }
 
     override suspend fun sync(): Result<Unit> = runCatching {

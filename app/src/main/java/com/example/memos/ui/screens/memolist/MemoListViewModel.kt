@@ -36,7 +36,11 @@ class MemoListViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             uiState = uiState.copy(isRefreshing = true)
-            memoRepository.sync()
+            try {
+                memoRepository.sync()
+            } catch (_: Exception) {
+                // offline — sync will retry when connectivity returns
+            }
             uiState = uiState.copy(isRefreshing = false)
         }
     }
