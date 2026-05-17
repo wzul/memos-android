@@ -4,6 +4,7 @@ import com.example.memos.data.api.MemosApi
 import com.example.memos.data.api.dto.CreateMemoRequestDto
 import com.example.memos.data.api.dto.MemoDto
 import com.example.memos.data.api.dto.UpdateMemoRequestDto
+import com.example.memos.data.api.dto.toDomain as attachmentToDomain
 import com.example.memos.data.api.dto.toEntity
 import com.example.memos.data.db.dao.MemoDao
 import com.example.memos.data.db.entity.MemoEntity
@@ -44,7 +45,7 @@ class MemoRepositoryImpl @Inject constructor(
         if (dto.attachments.isNullOrEmpty()) {
             val attachResp = api.listMemoAttachments(name)
             if (attachResp.isSuccessful) {
-                val attachList = attachResp.body()?.attachments?.map { com.example.memos.data.api.dto.toDomain(it) } ?: emptyList()
+                val attachList = attachResp.body()?.attachments?.map { attachmentToDomain(it) } ?: emptyList()
                 if (attachList.isNotEmpty()) {
                     val updated = entity.copy(
                         attachmentsJson = com.google.gson.Gson().toJson(attachList)
