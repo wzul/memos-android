@@ -1,7 +1,5 @@
 package com.example.memos.data.api
 
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
 import javax.inject.Inject
@@ -19,14 +17,5 @@ class AuthInterceptor @Inject constructor(
                 .header("Authorization", "Bearer $token")
                 .build()
         )
-    }
-}
-
-@Singleton
-class TokenProvider @Inject constructor(
-    private val localDataSource: LocalDataSource
-) {
-    fun getToken(): String? = runBlocking {
-        localDataSource.accessToken.first()
     }
 }

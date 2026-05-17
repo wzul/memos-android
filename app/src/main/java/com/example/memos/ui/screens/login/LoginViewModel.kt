@@ -31,13 +31,14 @@ class LoginViewModel @Inject constructor(
     fun login(instanceUrl: String, accessToken: String, enableBiometric: Boolean = false) {
         viewModelScope.launch {
             uiState = uiState.copy(isLoading = true, error = null)
+            encryptedTokenStore.saveInstanceUrl(instanceUrl)
+            encryptedTokenStore.saveAccessToken(accessToken)
             val result = authRepository.signIn(instanceUrl, accessToken)
             uiState = if (result.isSuccess) {
-                encryptedTokenStore.saveInstanceUrl(instanceUrl)
-                encryptedTokenStore.saveAccessToken(accessToken)
                 encryptedTokenStore.setBiometricEnabled(enableBiometric)
                 uiState.copy(isLoading = false, isLoggedIn = true)
             } else {
+                encryptedTokenStore.clear()
                 uiState.copy(
                     isLoading = false,
                     error = result.exceptionOrNull()?.message ?: "Login failed"

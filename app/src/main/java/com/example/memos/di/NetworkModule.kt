@@ -3,9 +3,9 @@ package com.example.memos.di
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.memos.data.api.AttachmentApi
 import com.example.memos.data.api.AuthInterceptor
+import com.example.memos.data.api.DynamicBaseUrlInterceptor
 import com.example.memos.data.api.LocalDataSource
 import com.example.memos.data.api.MemosApi
 import com.example.memos.data.api.TokenProvider
@@ -15,8 +15,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -35,8 +33,20 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideTokenProvider(localDataSource: LocalDataSource): TokenProvider {
-        return TokenProvider(localDataSource)
+    fun provideEncryptedTokenStore(@ApplicationContext context: Context): EncryptedTokenStore {
+        return EncryptedTokenStore(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTokenProvider(encryptedTokenStore: EncryptedTokenStore): TokenProvider {
+        return TokenProvider(encryptedTokenStore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDynamicBaseUrlInterceptor(encryptedTokenStore: EncryptedTokenStore): DynamicBaseUrlInterceptor {
+        return DynamicBaseUrlInterceptor(encryptedTokenStore)
     }
 
     @Provides
@@ -47,11 +57,15 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
+    fun provideOkHttpClient(
+        authInterceptor: AuthInterceptor,
+        dynamicBaseUrlInterceptor: DynamicBaseUrlInterceptor
+    ): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
         return OkHttpClient.Builder()
+            .addInterceptor(dynamicBaseUrlInterceptor)
             .addInterceptor(authInterceptor)
             .addInterceptor(logging)
             .build()
@@ -59,16 +73,9 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(
-        okHttpClient: OkHttpClient,
-        localDataSource: LocalDataSource
-    ): Retrofit {
-        val baseUrl = runBlocking {
-            val url = localDataSource.instanceUrl.first()
-            (url?.removeSuffix("/") ?: "https://demo.usememos.com") + "/"
-        }
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(baseUrl)
+            .baseUrl("https://localhost/")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
