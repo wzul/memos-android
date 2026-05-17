@@ -33,9 +33,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.memos.data.model.Visibility
 import com.example.memos.ui.components.MarkdownToolbar
@@ -51,6 +54,7 @@ fun MemoEditScreen(
 ) {
     val uiState = viewModel.uiState
     var textFieldValue by remember { mutableStateOf(TextFieldValue(uiState.content)) }
+    var isEditorFocused by remember { mutableStateOf(false) }
 
     val displayValue = remember(textFieldValue) {
         TextFieldValue(
@@ -107,45 +111,56 @@ fun MemoEditScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
+                .padding(
+                    horizontal = if (isEditorFocused) 0.dp else 16.dp,
+                    vertical = if (isEditorFocused) 0.dp else 16.dp
+                )
                 .imePadding()
         ) {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            AnimatedVisibility(
+                visible = !isEditorFocused,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
             ) {
-                Visibility.entries.forEach { visibility ->
-                    FilterChip(
-                        selected = uiState.visibility == visibility,
-                        onClick = { viewModel.setVisibility(visibility) },
-                        label = { Text(visibility.name.lowercase().replaceFirstChar { it.uppercase() }) }
-                    )
-                }
-                FilterChip(
-                    selected = uiState.pinned,
-                    onClick = { viewModel.togglePinned() },
-                    label = { Text("Pin") },
-                    leadingIcon = {
-                        if (uiState.pinned) {
-                            Icon(
-                                Icons.Default.PushPin,
-                                contentDescription = null,
-                                modifier = Modifier.height(18.dp)
+                Column {
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Visibility.entries.forEach { visibility ->
+                            FilterChip(
+                                selected = uiState.visibility == visibility,
+                                onClick = { viewModel.setVisibility(visibility) },
+                                label = { Text(visibility.name.lowercase().replaceFirstChar { it.uppercase() }) }
                             )
                         }
+                        FilterChip(
+                            selected = uiState.pinned,
+                            onClick = { viewModel.togglePinned() },
+                            label = { Text("Pin") },
+                            leadingIcon = {
+                                if (uiState.pinned) {
+                                    Icon(
+                                        Icons.Default.PushPin,
+                                        contentDescription = null,
+                                        modifier = Modifier.height(18.dp)
+                                    )
+                                }
+                            }
+                        )
                     }
-                )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    TagInputField(
+                        tags = uiState.tags,
+                        onTagsChanged = viewModel::setTags,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            TagInputField(
-                tags = uiState.tags,
-                onTagsChanged = viewModel::setTags,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = displayValue,
@@ -159,7 +174,8 @@ fun MemoEditScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .weight(1f)
+                    .onFocusChanged { isEditorFocused = it.isFocused },
                 placeholder = { Text("Write in Markdown...") }
             )
 
