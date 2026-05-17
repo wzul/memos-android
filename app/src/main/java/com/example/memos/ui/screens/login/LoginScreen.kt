@@ -1,5 +1,8 @@
 package com.example.memos.ui.screens.login
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +16,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,79 +52,93 @@ fun LoginScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(24.dp),
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = "Connect to Memos",
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Enter your Memos instance URL and access token",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(24.dp))
 
-            Row(
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Surface(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                shape = MaterialTheme.shapes.large
             ) {
-                Text("Use Custom Server")
-                Switch(
-                    checked = useCustomUrl,
-                    onCheckedChange = { useCustomUrl = it }
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-
-            if (useCustomUrl) {
-                OutlinedTextField(
-                    value = customUrl,
-                    onValueChange = { customUrl = it },
-                    label = { Text("Instance URL") },
-                    placeholder = { Text("https://memos.example.com") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-            } else {
-                OutlinedTextField(
-                    value = defaultUrl,
-                    onValueChange = { },
-                    label = { Text("Instance URL") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    enabled = false
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = accessToken,
-                onValueChange = { accessToken = it },
-                label = { Text("Access Token") },
-                placeholder = { Text("Paste your token from Memos settings") },
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            if (viewModel.canUseBiometric) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("Use Biometric Unlock")
-                    Switch(
-                        checked = enableBiometric,
-                        onCheckedChange = { enableBiometric = it }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Use Custom Server",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Switch(
+                            checked = useCustomUrl,
+                            onCheckedChange = { useCustomUrl = it }
+                        )
+                    }
+
+                    if (useCustomUrl) {
+                        OutlinedTextField(
+                            value = customUrl,
+                            onValueChange = { customUrl = it },
+                            label = { Text("Instance URL") },
+                            placeholder = { Text("https://memos.example.com") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    } else {
+                        OutlinedTextField(
+                            value = defaultUrl,
+                            onValueChange = { },
+                            label = { Text("Instance URL") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            enabled = false
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = accessToken,
+                        onValueChange = { accessToken = it },
+                        label = { Text("Access Token") },
+                        placeholder = { Text("Paste your token from Memos settings") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
+
+                    if (viewModel.canUseBiometric) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Use Biometric Unlock",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Switch(
+                                checked = enableBiometric,
+                                onCheckedChange = { enableBiometric = it }
+                            )
+                        }
+                    }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
             }
 
             Button(
@@ -133,7 +151,8 @@ fun LoginScreen(
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading && accessToken.isNotBlank() && (!useCustomUrl || customUrl.isNotBlank())
+                enabled = !uiState.isLoading && accessToken.isNotBlank() && (!useCustomUrl || customUrl.isNotBlank()),
+                shape = MaterialTheme.shapes.large
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
@@ -141,16 +160,20 @@ fun LoginScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Connect")
+                    Text("Connect", style = MaterialTheme.typography.labelLarge)
                 }
             }
 
-            if (uiState.error != null) {
-                Spacer(modifier = Modifier.height(12.dp))
+            AnimatedVisibility(
+                visible = uiState.error != null,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
                 Text(
-                    text = uiState.error!!,
+                    text = uiState.error ?: "",
                     color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }
