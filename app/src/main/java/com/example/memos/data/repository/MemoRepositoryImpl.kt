@@ -44,7 +44,7 @@ class MemoRepositoryImpl @Inject constructor(
         if (dto.attachments.isNullOrEmpty()) {
             val attachResp = api.listMemoAttachments(name)
             if (attachResp.isSuccessful) {
-                val attachList = attachResp.body()?.attachments?.map { it.toDomain() } ?: emptyList()
+                val attachList = attachResp.body()?.attachments?.map { com.example.memos.data.api.dto.toDomain(it) } ?: emptyList()
                 if (attachList.isNotEmpty()) {
                     val updated = entity.copy(
                         attachmentsJson = com.google.gson.Gson().toJson(attachList)
