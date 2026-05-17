@@ -102,18 +102,6 @@ fun MemoEditScreen(
                     }
                 }
             )
-        },
-        bottomBar = {
-            MarkdownToolbar(
-                textFieldValue = textFieldValue,
-                onValueChange = {
-                    textFieldValue = it
-                    viewModel.setContent(it.text)
-                },
-                onUndo = { viewModel.undo() },
-                onRedo = { viewModel.redo() },
-                modifier = Modifier.fillMaxWidth()
-            )
         }
     ) { padding ->
         Column(
@@ -163,7 +151,6 @@ fun MemoEditScreen(
             OutlinedTextField(
                 value = displayValue,
                 onValueChange = {
-                    // Keep raw text state; annotated display recomputes on next frame
                     textFieldValue = TextFieldValue(
                         text = it.text,
                         selection = it.selection,
@@ -175,6 +162,17 @@ fun MemoEditScreen(
                     .fillMaxWidth()
                     .weight(1f),
                 placeholder = { Text("Write in Markdown...") }
+            )
+
+            MarkdownToolbar(
+                textFieldValue = textFieldValue,
+                onValueChange = {
+                    textFieldValue = it
+                    viewModel.setContent(it.text)
+                },
+                onUndo = { viewModel.undo() },
+                onRedo = { viewModel.redo() },
+                modifier = Modifier.fillMaxWidth()
             )
         }
 
