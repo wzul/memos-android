@@ -10,7 +10,8 @@ data class MemoDto(
     val visibility: String? = null,
     val tags: List<String>? = null,
     val pinned: Boolean? = null,
-    val snippet: String? = null
+    val snippet: String? = null,
+    val attachments: List<AttachmentDto>? = null
 )
 
 data class CreateMemoRequestDto(
@@ -43,7 +44,8 @@ fun MemoDto.toEntity(): com.example.memos.data.db.entity.MemoEntity {
         visibility = visibility ?: "PRIVATE",
         tags = tags?.joinToString(",") ?: "",
         pinned = pinned ?: false,
-        snippet = snippet
+        snippet = snippet,
+        attachmentsJson = attachments?.map { it.toDomain() }?.let { com.google.gson.Gson().toJson(it) } ?: ""
     )
 }
 

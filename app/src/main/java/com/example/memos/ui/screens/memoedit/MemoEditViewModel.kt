@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.memos.data.model.Attachment
 import com.example.memos.data.model.Memo
 import com.example.memos.data.model.Visibility
 import com.example.memos.data.repository.MemoRepository
@@ -43,9 +44,20 @@ class MemoEditViewModel @Inject constructor(
                     visibility = memo.visibility,
                     pinned = memo.pinned,
                     tags = memo.tags,
+                    attachments = memo.attachments,
                     isLoading = false
                 )
                 pushHistory(memo.content)
+            }
+            // Refresh from server to get latest attachments
+            memoRepository.refreshMemo(name).onSuccess { refreshed ->
+                uiState = uiState.copy(
+                    content = refreshed.content,
+                    visibility = refreshed.visibility,
+                    pinned = refreshed.pinned,
+                    tags = refreshed.tags,
+                    attachments = refreshed.attachments
+                )
             }
         }
     }
@@ -139,6 +151,7 @@ data class MemoEditUiState(
     val visibility: Visibility = Visibility.PRIVATE,
     val pinned: Boolean = false,
     val tags: List<String> = emptyList(),
+    val attachments: List<Attachment> = emptyList(),
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val saved: Boolean = false,

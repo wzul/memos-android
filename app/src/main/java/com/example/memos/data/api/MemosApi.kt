@@ -1,6 +1,7 @@
 package com.example.memos.data.api
 
 import com.example.memos.data.api.dto.CreateMemoRequestDto
+import com.example.memos.data.api.dto.ListAttachmentsResponseDto
 import com.example.memos.data.api.dto.ListMemosResponseDto
 import com.example.memos.data.api.dto.MemoDto
 import com.example.memos.data.api.dto.RefreshTokenResponseDto
@@ -56,4 +57,7 @@ interface MemosApi {
 
     @DELETE("api/v1/{name}")
     suspend fun deleteMemo(@Path("name", encoded = true) name: String): Response<Unit>
+
+    @GET("api/v1/{name}/attachments")
+    suspend fun listMemoAttachments(@Path("name", encoded = true) name: String): Response<ListAttachmentsResponseDto>
 }

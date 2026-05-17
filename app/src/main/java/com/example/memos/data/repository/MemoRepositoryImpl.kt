@@ -33,6 +33,31 @@ class MemoRepositoryImpl @Inject constructor(
     override suspend fun getMemo(name: String): Memo? =
         dao.getMemoByName(name)?.toDomain()
 
+    override suspend fun refreshMemo(name: String): Result<Memo> = runCatching {
+        val response = api.getMemo(name)
+        if (!response.isSuccessful) throw IllegalStateException("Failed to fetch memo")
+        val dto = response.body() ?: throw IllegalStateException("Empty response")
+        val entity = dto.toEntity()
+        dao.insertOrUpdate(entity)
+
+        // Fetch attachments separately if not included in memo response
+        if (dto.attachments.isNullOrEmpty()) {
+            val attachResp = api.listMemoAttachments(name)
+            if (attachResp.isSuccessful) {
+                val attachList = attachResp.body()?.attachments?.map { it.toDomain() } ?: emptyList()
+                if (attachList.isNotEmpty()) {
+                    val updated = entity.copy(
+                        attachmentsJson = com.google.gson.Gson().toJson(attachList)
+                    )
+                    dao.insertOrUpdate(updated)
+                }
+            }
+        }
+
+        dao.getMemoByName(name)?.toDomain()
+            ?: throw IllegalStateException("Memo not found after refresh")
+    }
+
     override suspend fun createMemo(content: String, visibility: Visibility): Result<Memo> = runCatching {
         val localId = "local-${UUID.randomUUID()}"
         val localMemo = MemoEntity(

@@ -8,6 +8,7 @@ interface MemoRepository {
     fun observeMemos(): Flow<List<Memo>>
     fun searchMemos(query: String): Flow<List<Memo>>
     suspend fun getMemo(name: String): Memo?
+    suspend fun refreshMemo(name: String): Result<Memo>
     suspend fun createMemo(content: String, visibility: Visibility): Result<Memo>
     suspend fun updateMemo(name: String, content: String?, visibility: Visibility?, pinned: Boolean?): Result<Memo>
     suspend fun deleteMemo(name: String): Result<Unit>

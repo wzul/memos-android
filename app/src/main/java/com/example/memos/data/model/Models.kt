@@ -14,7 +14,16 @@ data class Memo(
     val creator: String? = null,
     val createTime: String? = null,
     val updateTime: String? = null,
-    val snippet: String? = null
+    val snippet: String? = null,
+    val attachments: List<Attachment> = emptyList()
+) : Parcelable
+
+@Parcelize
+data class Attachment(
+    val name: String,
+    val filename: String,
+    val type: String? = null,
+    val size: Long? = null
 ) : Parcelable
 
 enum class State { NORMAL, ARCHIVED }
