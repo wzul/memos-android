@@ -1,5 +1,6 @@
 package com.example.memos.ui.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -22,7 +23,7 @@ sealed class Screen(val route: String) {
 
     fun createRoute(vararg args: String): String {
         var route = this.route
-        args.forEach { route = route.replaceFirst("{name}", it) }
+        args.forEach { route = route.replaceFirst("{name}", Uri.encode(it)) }
         return route
     }
 }
