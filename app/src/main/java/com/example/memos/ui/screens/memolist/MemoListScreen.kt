@@ -189,12 +189,7 @@ fun MemoListScreen(
                                 memo = memo,
                                 onClick = { onNavigateToEdit(memo.name) },
                                 onPinToggle = { viewModel.togglePin(memo.name) },
-                                onDelete = {
-                                    viewModel.deleteMemo(memo.name)
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Note deleted")
-                                    }
-                                }
+                                onRequestDelete = { viewModel.requestDelete(memo.name) }
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(start = 72.dp),
@@ -239,14 +234,14 @@ private fun MemoListRow(
     memo: Memo,
     onClick: () -> Unit,
     onPinToggle: () -> Unit,
-    onDelete: () -> Unit
+    onRequestDelete: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
     val swipeState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             if (value == SwipeToDismissBoxValue.EndToStart) {
-                onDelete()
+                onRequestDelete()
                 true
             } else false
         }
@@ -263,7 +258,7 @@ private fun MemoListRow(
             ) {
                 if (swipeState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
                     IconButton(
-                        onClick = { onDelete() },
+                        onClick = { onRequestDelete() },
                         modifier = Modifier.padding(end = 24.dp)
                     ) {
                         Icon(
@@ -352,7 +347,7 @@ private fun MemoListRow(
                                 text = { Text("Delete") },
                                 onClick = {
                                     showMenu = false
-                                    onDelete()
+                                    onRequestDelete()
                                 }
                             )
                         }
